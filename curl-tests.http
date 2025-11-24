@@ -1,0 +1,246 @@
+### POC Banking API - Testes cURL
+### API rodando em http://localhost:5000
+### IMPORTANTE: Substitua {ACCOUNT_ID}, {FROM_ACCOUNT_ID}, {TO_ACCOUNT_ID} pelos IDs retornados pela API
+
+@baseUrl = http://localhost:5001
+
+### ============================================
+### 1. DISPONIBILIDADE BÁSICA DA API
+### ============================================
+
+# Teste básico de health check
+GET {{baseUrl}}/ping
+X-Correlation-Id: health-check-1
+X-Client-Id: test-client
+
+### ============================================
+### 2. AUTENTICAÇÃO / LOGIN
+### ============================================
+
+# Login - cenário de sucesso
+# Email: user@test.com, Password: 123456
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Correlation-Id: login-success-1
+X-Client-Id: test-client
+
+{
+  "email": "user@test.com",
+  "password": "123456"
+}
+
+###
+
+# Login com senha inválida
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Correlation-Id: login-invalid-password
+X-Client-Id: test-client
+
+{
+  "email": "user@test.com",
+  "password": "wrong-password"
+}
+
+###
+
+# Login com email inexistente
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+X-Correlation-Id: login-invalid-email
+X-Client-Id: test-client
+
+{
+  "email": "nonexistent@test.com",
+  "password": "123456"
+}
+
+### ============================================
+### 3. CRIAÇÃO DE CONTA
+### ============================================
+
+# Criar conta com saldo inicial 1000.0
+# COPIE O accountId retornado e use como {ACCOUNT_ID} nos testes abaixo
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+X-Correlation-Id: create-account-1000
+X-Client-Id: test-client
+
+{
+  "initialBalance": 1000.0
+}
+
+###
+
+# Criar conta com saldo inicial 2000.0
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+X-Correlation-Id: create-account-2000
+X-Client-Id: test-client
+
+{
+  "initialBalance": 2000.0
+}
+
+###
+
+# Criar conta com saldo inicial 3000.0
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+X-Correlation-Id: create-account-3000
+X-Client-Id: test-client
+
+{
+  "initialBalance": 3000.0
+}
+
+### ============================================
+### 4. CONSULTA DE SALDO
+### ============================================
+
+# Consultar saldo de conta válida
+# SUBSTITUA {ACCOUNT_ID} pelo ID retornado na criação de conta
+GET {{baseUrl}}/accounts/{ACCOUNT_ID}/balance
+X-Correlation-Id: get-balance-valid
+X-Client-Id: test-client
+
+###
+
+# Consultar saldo de conta inexistente (deve retornar 404)
+GET {{baseUrl}}/accounts/00000000-0000-0000-0000-000000000000/balance
+X-Correlation-Id: get-balance-invalid
+X-Client-Id: test-client
+
+### ============================================
+### 5. TRANSFERÊNCIAS
+### ============================================
+
+# Transferência OK entre duas contas válidas
+# SUBSTITUA {FROM_ACCOUNT_ID} e {TO_ACCOUNT_ID} pelos IDs das contas criadas
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+X-Correlation-Id: transfer-ok-1
+X-Client-Id: test-client
+
+{
+  "fromAccountId": "{FROM_ACCOUNT_ID}",
+  "toAccountId": "{TO_ACCOUNT_ID}",
+  "amount": 100.0
+}
+
+###
+
+# Transferência com saldo insuficiente (deve retornar 400)
+# Use uma conta com saldo menor que o valor da transferência
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+X-Correlation-Id: transfer-insufficient
+X-Client-Id: test-client
+
+{
+  "fromAccountId": "{FROM_ACCOUNT_ID}",
+  "toAccountId": "{TO_ACCOUNT_ID}",
+  "amount": 999999.0
+}
+
+###
+
+# Transferência com conta de origem inexistente
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+X-Correlation-Id: transfer-invalid-origin
+X-Client-Id: test-client
+
+{
+  "fromAccountId": "00000000-0000-0000-0000-000000000000",
+  "toAccountId": "{TO_ACCOUNT_ID}",
+  "amount": 100.0
+}
+
+###
+
+# Transferência com conta de destino inexistente
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+X-Correlation-Id: transfer-invalid-destination
+X-Client-Id: test-client
+
+{
+  "fromAccountId": "{FROM_ACCOUNT_ID}",
+  "toAccountId": "00000000-0000-0000-0000-000000000000",
+  "amount": 100.0
+}
+
+### ============================================
+### 6. EXTRATO / TRANSAÇÕES
+### ============================================
+
+# Listar todas as transações de uma conta
+# SUBSTITUA {ACCOUNT_ID} pelo ID da conta
+GET {{baseUrl}}/accounts/{ACCOUNT_ID}/transactions
+X-Correlation-Id: list-transactions-all
+X-Client-Id: test-client
+
+###
+
+# Listar transações com filtro de data
+GET {{baseUrl}}/accounts/{ACCOUNT_ID}/transactions?startDate=2025-01-01&endDate=2030-01-01
+X-Correlation-Id: list-transactions-filtered
+X-Client-Id: test-client
+
+###
+
+# Listar transações de conta inexistente (deve retornar 404)
+GET {{baseUrl}}/accounts/00000000-0000-0000-0000-000000000000/transactions
+X-Correlation-Id: list-transactions-invalid
+X-Client-Id: test-client
+
+### ============================================
+### 7. ERROS DE VALIDAÇÃO & PARSING
+### ============================================
+
+# POST /transactions com JSON quebrado (deve retornar 400/500)
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+X-Correlation-Id: transfer-invalid-json
+X-Client-Id: test-client
+
+{
+  "fromAccountId": "invalid-guid",
+  "toAccountId": "{TO_ACCOUNT_ID}",
+  "amount": "not-a-number"
+}
+
+###
+
+# Chamar POST /ping (método errado - deve retornar 405)
+POST {{baseUrl}}/ping
+X-Correlation-Id: ping-wrong-method
+X-Client-Id: test-client
+
+### ============================================
+### 8. SPAM / CARGA LEVE PARA LOGS & TRACES
+### ============================================
+
+# Script bash para gerar múltiplas requisições de ping
+# Execute no terminal:
+# for i in {1..30}; do
+#   curl -s http://localhost:5000/ping \
+#     -H "X-Correlation-Id: spam-ping-$i" \
+#     -H "X-Client-Id: load-tester" > /dev/null
+#   echo "Ping $i completed"
+# done
+
+# Script bash para gerar múltiplas transferências pequenas
+# Execute no terminal (substitua os IDs):
+# FROM_ID="{FROM_ACCOUNT_ID}"
+# TO_ID="{TO_ACCOUNT_ID}"
+# for i in {1..20}; do
+#   curl -s -X POST http://localhost:5000/transactions \
+#     -H "Content-Type: application/json" \
+#     -H "X-Correlation-Id: spam-transfer-$i" \
+#     -H "X-Client-Id: load-tester" \
+#     -d "{\"fromAccountId\":\"$FROM_ID\",\"toAccountId\":\"$TO_ID\",\"amount\":1.0}" > /dev/null
+#   echo "Transfer $i completed"
+# done
+
