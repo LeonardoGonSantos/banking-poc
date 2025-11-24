@@ -41,8 +41,8 @@ generate_random_balance() {
 # Função para simular um cliente
 simulate_client() {
     local client_num=$1
-    local correlation_id="client-$client_num-$(date +%s)-$RANDOM"
-    local client_id="sim-client-$client_num"
+    local correlation_id=$(uuidgen)
+    local client_id=$((RANDOM % 90000 + 10000)) # Inteiro randômico de 5 dígitos
     
     # Gerar dados aleatórios
     local name=$(generate_random_name)
@@ -96,7 +96,7 @@ simulate_client() {
     sleep 2
     
     for ((op=1; op<=OPERATIONS_PER_CLIENT; op++)); do
-        local op_correlation_id="$correlation_id-op-$op"
+        local op_correlation_id=$(uuidgen)
         
         # Ler contas disponíveis do arquivo
         local available_accounts=$(cat "$ACCOUNTS_FILE" 2>/dev/null | grep -v "^$" | sort -u)

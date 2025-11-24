@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
@@ -18,6 +19,10 @@ public static class SerilogExtensions
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
                 .MinimumLevel.Override("System", LogEventLevel.Warning)
+                // Filtrar exceções de Bad Request que já são tratadas pelo GlobalExceptionHandler
+                .Filter.ByExcluding(logEvent => 
+                    logEvent.Exception is BadHttpRequestException || 
+                    logEvent.Exception is System.Text.Json.JsonException)
                 .Enrich.FromLogContext()
                 .Enrich.WithEnvironmentName()
                 .Enrich.WithMachineName()
@@ -28,7 +33,7 @@ public static class SerilogExtensions
                 .WriteTo.OpenTelemetry(options =>
                 {
                     options.Endpoint = otelEndpoint;
-                    options.Protocol = OtlpProtocol.Grpc; // Ou HttpProtobuf dependendo da porta/config
+                    options.Protocol = OtlpProtocol.Grpc;
                     options.ResourceAttributes = new Dictionary<string, object>
                     {
                         ["service.name"] = "BankingApi",
@@ -39,4 +44,3 @@ public static class SerilogExtensions
         });
     }
 }
-

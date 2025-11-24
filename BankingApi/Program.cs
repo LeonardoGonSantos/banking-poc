@@ -21,6 +21,8 @@ builder.ConfigureSerilog();
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Configurar Entity Framework Core com PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -53,6 +55,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseExceptionHandler();
 
 // Middlewares de correlação (devem vir antes de outros middlewares)
 app.UseMiddleware<CorrelationIdMiddleware>();
