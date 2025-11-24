@@ -4,17 +4,19 @@ using BankingApi.Endpoints;
 using BankingApi.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configurar URLs para escutar em todas as interfaces (necessário no Docker)
 builder.WebHost.UseUrls("http://0.0.0.0:80");
 
-// Configurar Serilog primeiro
-builder.ConfigureSerilog();
-
 // Configurar OpenTelemetry
 builder.ConfigureOpenTelemetry();
+
+// Configurar Serilog
+builder.ConfigureSerilog();
 
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();

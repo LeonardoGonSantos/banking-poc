@@ -65,16 +65,9 @@ public static class OpenTelemetryExtensions
                     });
             });
 
-        // Logs
-        builder.Logging.AddOpenTelemetry(options =>
-        {
-            options.SetResourceBuilder(resourceBuilder)
-                .AddOtlpExporter(otlpOptions =>
-                {
-                    var endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://otel-collector:4317";
-                    otlpOptions.Endpoint = new Uri(endpoint);
-                });
-        });
+        // Logs (Configurados via Serilog, removendo integração ILogger -> OTLP para evitar duplicação ou conflitos)
+        // builder.Logging.AddOpenTelemetry(...) 
+        builder.Logging.ClearProviders(); // Opcional: remover outros providers se quiser apenas Serilog
     }
 }
 

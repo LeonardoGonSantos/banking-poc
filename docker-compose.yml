@@ -27,6 +27,19 @@ services:
     networks:
       - banking-network
 
+  opensearch-dashboards-init:
+    image: curlimages/curl:latest
+    container_name: opensearch-dashboards-init
+    volumes:
+      - ./opensearch-dashboards-init.sh:/init.sh
+    command: ["/bin/sh", "/init.sh"]
+    depends_on:
+      - opensearch
+      - opensearch-dashboards
+    networks:
+      - banking-network
+    restart: "no"
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
