@@ -1,25 +1,64 @@
-# POC API Bancária Observável
+# 🏦 POC: Banking API com MCP Servers
 
-POC completa de uma API Bancária em .NET 8 com foco em **Observabilidade e Logs Estruturados**, utilizando:
+## 📋 Sumário
 
-- **ASP.NET Core 8** (Minimal API)
-- **Serilog** para logging estruturado (com sink nativo OTLP)
-- **OpenTelemetry** para telemetria (traces, métricas e logs)
-- **OpenTelemetry Collector** recebendo OTLP da API
-- **OpenSearch** como destino único de observabilidade
-- **OpenSearch Dashboards** para visualização
-- **PostgreSQL** como banco de dados
-- **Docker Compose** para orquestração local
+Este projeto é uma **Prova de Conceito (POC)** que demonstra a integração entre uma API bancária moderna e **Model Context Protocol (MCP) Servers**, permitindo que assistentes de IA (como Claude/Cursor) interajam diretamente com a API e consultem dados de observabilidade em tempo real.
+
+## 🎯 Objetivo
+
+O principal objetivo desta POC é **validar o uso de IA com MCP Servers** para:
+
+1. **Interação com APIs**: Permitir que assistentes de IA executem operações bancárias (criar usuários, transferências, consultas) através de um MCP Server dedicado
+2. **Análise de Observabilidade**: Consultar logs e traces no OpenSearch através de outro MCP Server, facilitando debugging e análise de comportamento da aplicação
+3. **Automação Inteligente**: Demonstrar como IAs podem automatizar tarefas de desenvolvimento, testes e troubleshooting usando MCP como ponte
+
+## 🏗️ Componentes do Projeto
+
+### Stack Técnica
+
+- **ASP.NET Core 8** (Minimal API) - API bancária principal
+- **Serilog** - Logging estruturado com sink OTLP nativo
+- **OpenTelemetry** - Telemetria completa (traces, métricas e logs)
+- **OpenTelemetry Collector** - Recebe e processa dados OTLP
+- **OpenSearch** - Armazenamento de logs e traces
+- **OpenSearch Dashboards** - Visualização de dados
+- **PostgreSQL** - Banco de dados relacional
+- **Docker Compose** - Orquestração de containers
+
+### MCP Servers
+
+1. **mcp-banking-api**: Expõe endpoints da API bancária como ferramentas MCP
+   - Criar usuários e contas
+   - Realizar transferências
+   - Consultar saldos e transações
+   - Listar usuários
+
+2. **mcp-opensearch**: Permite consultas ao OpenSearch via MCP
+   - Buscar logs por período, severidade ou texto
+   - Consultar traces e spans
+   - Analisar métricas de performance
+   - Correlacionar logs com traces
 
 ## 🏗️ Arquitetura
 
 ```mermaid
 graph TD
-    A[Banking API .NET 8] -->|OTLP gRPC| B[OTEL Collector]
-    B -->|Traces/Logs| C[OpenSearch]
-    D[OpenSearch Dashboards] --> C
-    A -->|SQL| E[PostgreSQL]
+    AI[Assistente IA / Cursor] -->|MCP Protocol| MCP1[MCP Banking API]
+    AI -->|MCP Protocol| MCP2[MCP OpenSearch]
+    MCP1 -->|HTTP| API[Banking API .NET 8]
+    MCP2 -->|REST API| OS[OpenSearch]
+    API -->|OTLP gRPC| OTEL[OTEL Collector]
+    OTEL -->|Traces/Logs| OS
+    OSD[OpenSearch Dashboards] --> OS
+    API -->|SQL| PG[PostgreSQL]
 ```
+
+### Fluxo de Dados
+
+1. **Aplicação → Observabilidade**: A Banking API envia logs e traces via OTLP para o Collector, que processa e armazena no OpenSearch
+2. **IA → Banking API**: O assistente de IA usa o MCP Banking Server para executar operações bancárias
+3. **IA → OpenSearch**: O assistente de IA usa o MCP OpenSearch Server para consultar logs e traces
+4. **Análise Visual**: OpenSearch Dashboards permite visualização manual dos dados
 
 ## 📋 Pré-requisitos
 
@@ -41,7 +80,13 @@ Isso irá:
 - Subir **OpenSearch** e **OpenSearch Dashboards**
 - Subir **OTEL Collector**
 - Construir e subir **Banking API**
-- Executar script de inicialização (`opensearch-dashboards-init`) para configurar os index patterns automaticamente
+- Construir e subir **MCP Banking API Server**
+- Construir e subir **MCP OpenSearch Server**
+- Executar script de inicialização automática que:
+  - Configura index patterns no OpenSearch Dashboards
+  - Cria 20 usuários de teste
+  - Executa 1.000 operações bancárias
+  - Gera logs e traces para demonstração
 
 ### 2. Validar Serviços
 
@@ -56,39 +101,88 @@ Acesse os serviços:
 - **OpenSearch Dashboards**: http://localhost:5601
 - **API Health Check**: http://localhost:5001/ping
 
-## 🧪 Testes e Simulação
+### 3. Configurar MCP Servers no Cursor/Claude Desktop
 
-### 1. Executar Testes Automatizados
+Para usar os MCP Servers com seu assistente de IA, adicione ao arquivo de configuração:
 
-O projeto inclui um script que executa uma bateria de testes via `curl` (`curl-tests.http`):
+**Para Cursor** (`~/.cursor/mcp_config.json`):
+```json
+{
+  "mcpServers": {
+    "banking-api": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-banking-api", "python", "server.py"]
+    },
+    "opensearch": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-opensearch", "python", "server.py"]
+    }
+  }
+}
+```
+
+**Para Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json` no macOS):
+```json
+{
+  "mcpServers": {
+    "banking-api": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-banking-api", "python", "server.py"]
+    },
+    "opensearch": {
+      "command": "docker",
+      "args": ["exec", "-i", "mcp-opensearch", "python", "server.py"]
+    }
+  }
+}
+```
+
+Reinicie o Cursor ou Claude Desktop após a configuração.
+
+## 🤖 Usando MCP Servers com IA
+
+Após configurar os MCP Servers, você pode interagir com o sistema através de comandos em linguagem natural:
+
+### Exemplos de Comandos - Banking API
+
+```
+"Crie um novo usuário chamado João Silva com email joao@test.com"
+"Liste todos os usuários cadastrados"
+"Faça uma transferência de R$ 100 da conta X para a conta Y"
+"Consulte o saldo da conta do usuário joao@test.com"
+"Liste as últimas transações"
+```
+
+### Exemplos de Comandos - OpenSearch
+
+```
+"Mostre os logs de erro das últimas 2 horas"
+"Busque logs relacionados a transferências com falha"
+"Analise os traces da operação de transferência"
+"Quais são os endpoints mais lentos da API?"
+"Mostre logs do usuário com correlationId X"
+```
+
+## 🧪 Testes Manuais (Opcional)
+
+Se preferir testar manualmente sem usar MCP:
+
+### 1. Executar Testes via curl
 
 ```bash
 chmod +x run-tests.sh
 ./run-tests.sh
 ```
 
-### 2. Simulação de Carga (50 Clientes)
+### 2. Gerar Carga Adicional
 
-Para gerar tráfego realista e popular o OpenSearch com logs e traces:
-
-```bash
-chmod +x simulate-clients.sh
-./simulate-clients.sh
-```
-
-Este script irá:
-- Criar 50 clientes com dados aleatórios
-- Realizar login para cada um
-- Executar 30 operações (transferências) por cliente
-- Gerar erros intencionais (saldo insuficiente) para testar logs de erro
-
-### 3. Validar Resultados da Simulação
-
-Após a simulação, verifique a integridade dos dados:
+O script de inicialização já gera 1.000 requests automaticamente. Para gerar mais:
 
 ```bash
-chmod +x validate-simulation.sh
-./validate-simulation.sh
+# Edite init-and-test.sh e ajuste as variáveis:
+# TOTAL_CLIENTS=50
+# OPERATIONS_PER_CLIENT=100
+docker compose restart environment-init
 ```
 
 ## 📊 Observabilidade no OpenSearch
@@ -122,38 +216,131 @@ banking-poc/
 │   ├── Endpoints/              # Minimal API Endpoints
 │   ├── Middleware/             # Middlewares de Correlação
 │   └── Program.cs              # Entry point
-├── docker-compose.yml          # Orquestração
+├── mcp-banking-api/            # MCP Server para Banking API
+│   ├── server.py               # Implementação do MCP Server
+│   ├── requirements.txt        # Dependências Python
+│   └── Dockerfile              # Container do MCP Server
+├── mcp-opensearch/             # MCP Server para OpenSearch
+│   ├── server.py               # Implementação do MCP Server
+│   ├── requirements.txt        # Dependências Python
+│   └── Dockerfile              # Container do MCP Server
+├── docker-compose.yml          # Orquestração completa
 ├── otel-collector.yaml         # Configuração do Collector
-├── curl-tests.http             # Cenários de teste
-├── simulate-clients.sh         # Script de carga
-├── validate-simulation.sh      # Script de validação
-└── opensearch-dashboards-init.sh # Script de setup do Dashboards
+├── init-and-test.sh            # Script de inicialização e testes
+└── README.md                   # Esta documentação
 ```
 
-## 📝 Notas de Desenvolvimento
+## 🔧 Detalhes Técnicos
 
-- A API escuta na porta **5001** (mapeada para 80 no container).
-- O Serilog foi configurado para exportar logs **diretamente** para o Collector via OTLP gRPC, garantindo melhor performance e confiabilidade em relação ao console scraping.
-- O banco de dados é recriado/migrado automaticamente no startup da API.
+### MCP Banking API Server
+
+Ferramentas disponíveis:
+- `create_user`: Cria novo usuário e conta bancária
+- `list_users`: Lista todos os usuários
+- `get_balance`: Consulta saldo de uma conta
+- `transfer_funds`: Realiza transferência entre contas
+- `list_transactions`: Lista transações de uma conta
+
+### MCP OpenSearch Server
+
+Ferramentas disponíveis:
+- `search_logs`: Busca logs por período, severidade ou texto
+- `search_traces`: Consulta traces e spans
+- `get_log_by_id`: Obtém log específico por ID
+- `get_trace_by_id`: Obtém trace completo por ID
+- `aggregate_logs`: Agregações e estatísticas de logs
+
+## 💡 Casos de Uso da POC
+
+### 1. Desenvolvimento Assistido por IA
+- Criar e testar endpoints através de comandos em linguagem natural
+- Gerar dados de teste automaticamente
+- Validar comportamento da API sem escrever código
+
+### 2. Debugging Inteligente
+- Analisar logs de erro com contexto completo
+- Correlacionar traces com logs para identificar gargalos
+- Investigar falhas através de perguntas em linguagem natural
+
+### 3. Análise de Performance
+- Identificar endpoints lentos
+- Analisar padrões de erro
+- Gerar relatórios de observabilidade
+
+### 4. Automação de Testes
+- Criar cenários de teste complexos via IA
+- Validar comportamento esperado
+- Gerar dados de carga realistas
+
+## 📝 Notas Técnicas
+
+- A API escuta na porta **5001** (mapeada para 80 no container)
+- Serilog exporta logs **diretamente** via OTLP gRPC para melhor performance
+- Banco de dados é migrado automaticamente no startup
+- MCP Servers usam **stdio** para comunicação com assistentes de IA
+- Containers MCP ficam em execução contínua aguardando conexões
+- Script de inicialização gera **1.000 requests** automaticamente para demonstração
 
 ## 🐛 Troubleshooting
 
-**API não responde?**
+### API não responde
 ```bash
 docker logs banking-api
 ```
 
-**Logs não aparecem no OpenSearch?**
-1. Verifique se o container `otel-collector` está rodando.
-2. Verifique os logs do collector:
+### Logs não aparecem no OpenSearch
+1. Verifique se o OTEL Collector está rodando:
    ```bash
    docker logs otel-collector
    ```
-3. Verifique se o índice existe:
+2. Verifique se os índices existem:
    ```bash
    curl http://localhost:9200/_cat/indices?v
    ```
 
+### MCP Server não conecta
+1. Verifique se os containers estão rodando:
+   ```bash
+   docker ps | grep mcp
+   ```
+2. Teste a conexão manualmente:
+   ```bash
+   docker exec -i mcp-banking-api python server.py
+   ```
+3. Verifique os logs:
+   ```bash
+   docker logs mcp-banking-api
+   docker logs mcp-opensearch
+   ```
+
+### Reiniciar ambiente completo
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+## 🎓 Aprendizados e Insights
+
+Esta POC demonstra:
+
+1. **Integração IA + Observabilidade**: Como assistentes de IA podem consultar logs e traces para debugging
+2. **Automação via MCP**: Como MCP Servers permitem que IAs executem operações complexas
+3. **Observabilidade Moderna**: Stack completa com OpenTelemetry e OpenSearch
+4. **Desenvolvimento Ágil**: Como IA pode acelerar desenvolvimento e testes
+5. **Arquitetura Cloud-Native**: Uso de containers, telemetria distribuída e APIs modernas
+
+## 📚 Referências
+
+- [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
+- [OpenTelemetry](https://opentelemetry.io/)
+- [OpenSearch](https://opensearch.org/)
+- [Serilog](https://serilog.net/)
+- [ASP.NET Core](https://docs.microsoft.com/aspnet/core/)
+
 ## 📄 Licença
 
-Este é um projeto de POC para fins didáticos.
+Este é um projeto de **Prova de Conceito (POC)** para fins educacionais e de demonstração.
+
+---
+
+**Desenvolvido para validar a integração entre IA, MCP Servers e Observabilidade Moderna** 🚀
