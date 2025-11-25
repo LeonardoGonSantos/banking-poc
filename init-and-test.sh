@@ -147,8 +147,8 @@ log_info "FASE 3: Executando Simulação de Testes"
 log_info "=========================================="
 
 # Configurações da simulação
-TOTAL_CLIENTS=10
-OPERATIONS_PER_CLIENT=10
+TOTAL_CLIENTS=20
+OPERATIONS_PER_CLIENT=50
 
 # Arquivos temporários
 ACCOUNTS_FILE="/tmp/simulation_accounts.txt"

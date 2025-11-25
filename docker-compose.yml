@@ -138,7 +138,8 @@ services:
     networks:
       - banking-network
     # O servidor MCP usa stdio por padrão (para Cursor/Claude Desktop)
-    # Para usar SSE, descomente a linha abaixo e ajuste o comando no Dockerfile
+    # Mantém o container rodando para uso externo via npx ou Cursor
+    command: ["tail", "-f", "/dev/null"]
     # ports:
     #   - "9900:9900"
     restart: unless-stopped
@@ -163,7 +164,8 @@ services:
     networks:
       - banking-network
     # O servidor MCP usa stdio por padrão (para Cursor/Claude Desktop)
-    # Para usar SSE, descomente a linha abaixo e ajuste o comando no Dockerfile
+    # Mantém o container rodando para uso externo via npx ou Cursor
+    command: ["tail", "-f", "/dev/null"]
     # ports:
     #   - "9901:9901"
     restart: unless-stopped
