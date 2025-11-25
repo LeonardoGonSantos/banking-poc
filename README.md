@@ -4,6 +4,21 @@
 
 Este projeto é uma **Prova de Conceito (POC)** que demonstra a integração entre uma API bancária moderna e **Model Context Protocol (MCP) Servers**, permitindo que assistentes de IA (como Claude/Cursor) interajam diretamente com a API e consultem dados de observabilidade em tempo real.
 
+## ⚡ Início Rápido
+
+```bash
+docker compose up -d --build
+```
+
+**Pronto!** O comando acima:
+- ✅ Sobe toda a infraestrutura (PostgreSQL, OpenSearch, OTEL Collector)
+- ✅ Inicia a Banking API e MCP Servers
+- ✅ Cria **20 usuários de teste** automaticamente
+- ✅ Executa **1.000 requests reais** simulando operações bancárias
+- ✅ Gera logs e traces para demonstração imediata
+
+**⏱️ Tempo**: 5-10 minutos | **📖 Guia completo**: [QUICKSTART.md](docs/QUICKSTART.md)
+
 ## 🎯 Objetivo
 
 O principal objetivo desta POC é **validar o uso de IA com MCP Servers** para:
@@ -11,6 +26,27 @@ O principal objetivo desta POC é **validar o uso de IA com MCP Servers** para:
 1. **Interação com APIs**: Permitir que assistentes de IA executem operações bancárias (criar usuários, transferências, consultas) através de um MCP Server dedicado
 2. **Análise de Observabilidade**: Consultar logs e traces no OpenSearch através de outro MCP Server, facilitando debugging e análise de comportamento da aplicação
 3. **Automação Inteligente**: Demonstrar como IAs podem automatizar tarefas de desenvolvimento, testes e troubleshooting usando MCP como ponte
+
+## 🎁 O que você ganha de graça?
+
+Ao executar `docker compose up`, o sistema **automaticamente**:
+
+### Dados de Teste Realistas
+- **20 usuários** criados com emails únicos
+- **1.000 operações bancárias** executadas
+- **~1.200 logs** indexados no OpenSearch
+- **~3.500 traces** com spans detalhados
+
+### Cenários Variados
+- ✅ Transferências bem-sucedidas (~40%)
+- ❌ Erros de saldo insuficiente (~40%)
+- ❌ Contas não encontradas (~20%)
+
+### Ambiente Completo
+- API REST documentada (Swagger)
+- OpenSearch Dashboards configurado
+- MCP Servers prontos para uso
+- Dados prontos para análise
 
 ## 🏗️ Componentes do Projeto
 
@@ -60,53 +96,59 @@ graph TD
 3. **IA → OpenSearch**: O assistente de IA usa o MCP OpenSearch Server para consultar logs e traces
 4. **Análise Visual**: OpenSearch Dashboards permite visualização manual dos dados
 
+## 📚 Documentação
+
+Esta POC possui documentação completa organizada por tópicos:
+
+| Documento | Descrição |
+|-----------|-----------|
+| **[⚡ QUICKSTART](docs/QUICKSTART.md)** | Início rápido - Execute e tenha tudo funcionando em 5 minutos |
+| **[🚀 SETUP](docs/SETUP.md)** | Guia completo de instalação e configuração dos MCP Servers |
+| **[🏗️ ARCHITECTURE](docs/ARCHITECTURE.md)** | Arquitetura detalhada do sistema e fluxo de dados |
+| **[🤖 MCP_SERVERS](docs/MCP_SERVERS.md)** | Guia completo dos MCP Servers e suas ferramentas |
+| **[📖 USAGE](docs/USAGE.md)** | Exemplos práticos de uso com IA e manualmente |
+
+**👉 Novo por aqui?** Comece pelo [QUICKSTART](docs/QUICKSTART.md)!
+
 ## 📋 Pré-requisitos
 
 - Docker e Docker Compose instalados
 - curl (para testes manuais)
+- Cursor ou Claude Desktop (para usar MCP Servers)
 
-## 🚀 Setup e Execução
+## 🚀 Como Usar
 
-### 1. Iniciar o Ambiente
-
-Execute o comando abaixo para construir e iniciar todos os containers:
+### Passo 1: Iniciar o Ambiente
 
 ```bash
 docker compose up -d --build
 ```
 
-Isso irá:
-- Subir **PostgreSQL** e criar o banco de dados
-- Subir **OpenSearch** e **OpenSearch Dashboards**
-- Subir **OTEL Collector**
-- Construir e subir **Banking API**
-- Construir e subir **MCP Banking API Server**
-- Construir e subir **MCP OpenSearch Server**
-- Executar script de inicialização automática que:
-  - Configura index patterns no OpenSearch Dashboards
-  - Cria 20 usuários de teste
-  - Executa 1.000 operações bancárias
-  - Gera logs e traces para demonstração
+Aguarde 5-10 minutos. O sistema irá automaticamente:
+- ✅ Configurar toda a infraestrutura
+- ✅ Criar 20 usuários de teste
+- ✅ Executar 1.000 requests reais
+- ✅ Gerar logs e traces
 
-### 2. Validar Serviços
+**📖 Detalhes**: Veja o [QUICKSTART](docs/QUICKSTART.md) para entender o que acontece
 
-Verifique se todos os containers estão rodando:
+### Passo 2: Verificar
 
 ```bash
 docker compose ps
+curl http://localhost:5001/ping
 ```
 
-Acesse os serviços:
-- **API Swagger**: http://localhost:5001/swagger
-- **OpenSearch Dashboards**: http://localhost:5601
-- **API Health Check**: http://localhost:5001/ping
+**Acesse**:
+- API Swagger: http://localhost:5001/swagger
+- OpenSearch Dashboards: http://localhost:5601
 
-### 3. Configurar MCP Servers no Cursor/Claude Desktop
+### Passo 3: Configurar MCP (Opcional)
 
-Para usar os MCP Servers com seu assistente de IA, adicione ao arquivo de configuração:
+Para usar com IA, configure os MCP Servers:
 
-**Para Cursor** (`~/.cursor/mcp_config.json`):
 ```json
+// ~/.cursor/mcp_config.json ou Claude Desktop config
 {
   "mcpServers": {
     "banking-api": {
@@ -121,69 +163,39 @@ Para usar os MCP Servers com seu assistente de IA, adicione ao arquivo de config
 }
 ```
 
-**Para Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json` no macOS):
-```json
-{
-  "mcpServers": {
-    "banking-api": {
-      "command": "docker",
-      "args": ["exec", "-i", "mcp-banking-api", "python", "server.py"]
-    },
-    "opensearch": {
-      "command": "docker",
-      "args": ["exec", "-i", "mcp-opensearch", "python", "server.py"]
-    }
-  }
-}
-```
+**📖 Guia completo**: [SETUP.md](docs/SETUP.md)
 
-Reinicie o Cursor ou Claude Desktop após a configuração.
+## 🤖 Exemplos de Uso
 
-## 🤖 Usando MCP Servers com IA
-
-Após configurar os MCP Servers, você pode interagir com o sistema através de comandos em linguagem natural:
-
-### Exemplos de Comandos - Banking API
+### Com IA (via MCP Servers)
 
 ```
-"Crie um novo usuário chamado João Silva com email joao@test.com"
+"Crie um usuário chamado João Silva com email joao@test.com"
 "Liste todos os usuários cadastrados"
-"Faça uma transferência de R$ 100 da conta X para a conta Y"
-"Consulte o saldo da conta do usuário joao@test.com"
-"Liste as últimas transações"
-```
-
-### Exemplos de Comandos - OpenSearch
-
-```
+"Faça uma transferência de R$ 100 entre dois usuários"
 "Mostre os logs de erro das últimas 2 horas"
-"Busque logs relacionados a transferências com falha"
-"Analise os traces da operação de transferência"
-"Quais são os endpoints mais lentos da API?"
-"Mostre logs do usuário com correlationId X"
+"Analise os traces da última transferência"
+"Quais endpoints estão mais lentos?"
 ```
 
-## 🧪 Testes Manuais (Opcional)
+**📖 Mais exemplos**: [USAGE.md](docs/USAGE.md)
 
-Se preferir testar manualmente sem usar MCP:
-
-### 1. Executar Testes via curl
+### Manualmente (via API REST)
 
 ```bash
-chmod +x run-tests.sh
-./run-tests.sh
+# Criar usuário
+curl -X POST http://localhost:5001/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"João","email":"joao@test.com","initialBalance":1000}'
+
+# Listar usuários
+curl http://localhost:5001/users
+
+# Ver logs no OpenSearch
+curl http://localhost:9200/logs-banking-api/_search
 ```
 
-### 2. Gerar Carga Adicional
-
-O script de inicialização já gera 1.000 requests automaticamente. Para gerar mais:
-
-```bash
-# Edite init-and-test.sh e ajuste as variáveis:
-# TOTAL_CLIENTS=50
-# OPERATIONS_PER_CLIENT=100
-docker compose restart environment-init
-```
+**📖 Guia completo**: [USAGE.md](docs/USAGE.md)
 
 ## 📊 Observabilidade no OpenSearch
 
@@ -281,56 +293,57 @@ Ferramentas disponíveis:
 - Containers MCP ficam em execução contínua aguardando conexões
 - Script de inicialização gera **1.000 requests** automaticamente para demonstração
 
-## 🐛 Troubleshooting
+## 🐛 Problemas Comuns
 
-### API não responde
+### Container não inicia
 ```bash
-docker logs banking-api
+docker compose logs <service-name>
 ```
 
-### Logs não aparecem no OpenSearch
-1. Verifique se o OTEL Collector está rodando:
-   ```bash
-   docker logs otel-collector
-   ```
-2. Verifique se os índices existem:
-   ```bash
-   curl http://localhost:9200/_cat/indices?v
-   ```
+### Sem dados no OpenSearch
+```bash
+# Verificar se a simulação executou
+docker logs environment-init --tail 20
+
+# Re-executar simulação
+docker compose restart environment-init
+```
 
 ### MCP Server não conecta
-1. Verifique se os containers estão rodando:
-   ```bash
-   docker ps | grep mcp
-   ```
-2. Teste a conexão manualmente:
-   ```bash
-   docker exec -i mcp-banking-api python server.py
-   ```
-3. Verifique os logs:
-   ```bash
-   docker logs mcp-banking-api
-   docker logs mcp-opensearch
-   ```
+```bash
+# Verificar containers
+docker ps | grep mcp
 
-### Reiniciar ambiente completo
+# Ver logs
+docker logs mcp-banking-api
+```
+
+### Recomeçar do zero
 ```bash
 docker compose down -v
 docker compose up -d --build
 ```
 
-## 🎓 Aprendizados e Insights
+**📖 Mais soluções**: Consulte a documentação completa acima
 
-Esta POC demonstra:
+## 🎓 O que esta POC demonstra
 
 1. **Integração IA + Observabilidade**: Como assistentes de IA podem consultar logs e traces para debugging
 2. **Automação via MCP**: Como MCP Servers permitem que IAs executem operações complexas
 3. **Observabilidade Moderna**: Stack completa com OpenTelemetry e OpenSearch
-4. **Desenvolvimento Ágil**: Como IA pode acelerar desenvolvimento e testes
-5. **Arquitetura Cloud-Native**: Uso de containers, telemetria distribuída e APIs modernas
+4. **Dados Realistas**: Geração automática de 1.000 requests com cenários variados
+5. **Arquitetura Cloud-Native**: Containers, telemetria distribuída e APIs modernas
 
-## 📚 Referências
+## 🔗 Links Úteis
 
+### Documentação do Projeto
+- [⚡ Início Rápido](docs/QUICKSTART.md)
+- [🚀 Setup Completo](docs/SETUP.md)
+- [🏗️ Arquitetura](docs/ARCHITECTURE.md)
+- [🤖 MCP Servers](docs/MCP_SERVERS.md)
+- [📖 Guia de Uso](docs/USAGE.md)
+
+### Tecnologias
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 - [OpenTelemetry](https://opentelemetry.io/)
 - [OpenSearch](https://opensearch.org/)
