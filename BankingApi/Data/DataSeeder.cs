@@ -12,12 +12,13 @@ public static class DataSeeder
             return; // Já tem dados
         }
 
-        // Criar usuário seed
+        // Criar usuário seed com dados aleatórios (ou fixos, mas com cara de aleatório)
+        var randomSuffix = new Random().Next(1000, 9999);
         var user = new User
         {
             Id = Guid.NewGuid(),
             Name = "Test User",
-            Email = "user@test.com",
+            Email = $"user-{randomSuffix}@test.com",
             PasswordHash = "fake-hash-123456" // Hash fake para POC
         };
 

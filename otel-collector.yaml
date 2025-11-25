@@ -17,13 +17,22 @@ exporters:
       - "http://opensearch:9200"
     logs_index: "logs-banking-api"
     traces_index: "traces-banking-api"
-    timeout: 10s
+    timeout: 30s
     mapping:
       mode: "none"
+    retry:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
   debug:
     verbosity: normal
 
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
 service:
+  extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]

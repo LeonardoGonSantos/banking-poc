@@ -15,17 +15,18 @@ public static class AccountsEndpoint
         {
             using var activity = new ActivitySource("BankingApi.Traces").StartActivity("CreateAccount");
             activity?.SetTag("account.initialBalance", request.InitialBalance);
+            activity?.SetTag("account.userEmail", request.Email);
 
             try
             {
-                // Assumir sempre o usuário seed (user@test.com)
+                // Buscar usuário informado no request
                 var user = await db.Users
-                    .FirstOrDefaultAsync(u => u.Email == "user@test.com");
+                    .FirstOrDefaultAsync(u => u.Email == request.Email);
 
                 if (user == null)
                 {
-                    Log.Error("Seed user not found");
-                    return Results.Problem("Seed user not found");
+                    Log.Warning("User not found for account creation: {Email}", request.Email);
+                    return Results.BadRequest(new ErrorResponse("User not found"));
                 }
 
                 var account = new Models.Account

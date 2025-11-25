@@ -13,6 +13,12 @@ services:
       - opensearch-data:/usr/share/opensearch/data
     networks:
       - banking-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:latest
@@ -23,7 +29,8 @@ services:
     ports:
       - "5601:5601"
     depends_on:
-      - opensearch
+      opensearch:
+        condition: service_healthy
     networks:
       - banking-network
 
@@ -34,8 +41,10 @@ services:
       - ./opensearch-dashboards-init.sh:/init.sh
     command: ["/bin/sh", "/init.sh"]
     depends_on:
-      - opensearch
-      - opensearch-dashboards
+      opensearch:
+        condition: service_healthy
+      opensearch-dashboards:
+        condition: service_started
     networks:
       - banking-network
     restart: "no"
@@ -50,9 +59,16 @@ services:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
     depends_on:
-      - opensearch
+      opensearch:
+        condition: service_healthy
     networks:
       - banking-network
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "components"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   postgres:
     image: postgres:16
@@ -67,6 +83,12 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - banking-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banking -d bankingdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   banking-api:
     build:
@@ -82,8 +104,10 @@ services:
     ports:
       - "5001:80"
     depends_on:
-      - otel-collector
-      - postgres
+      otel-collector:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - banking-network
 

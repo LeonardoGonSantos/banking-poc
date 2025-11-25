@@ -75,7 +75,7 @@ ACC2_RESP=$(curl -s -X POST "$BASE_URL/accounts" \
   -H "Content-Type: application/json" \
   -H "X-Correlation-Id: $(uuidgen)" \
   -H "X-Client-Id: $TEST_CLIENT_ID" \
-  -d '{"initialBalance":500.0}')
+  -d "{\"email\":\"$TEST_EMAIL\",\"initialBalance\":500.0}")
 ACCOUNT2=$(echo $ACC2_RESP | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
 
 echo "Criando Account 3..."
@@ -83,7 +83,7 @@ ACC3_RESP=$(curl -s -X POST "$BASE_URL/accounts" \
   -H "Content-Type: application/json" \
   -H "X-Correlation-Id: $(uuidgen)" \
   -H "X-Client-Id: $TEST_CLIENT_ID" \
-  -d '{"initialBalance":100.0}')
+  -d "{\"email\":\"$TEST_EMAIL\",\"initialBalance\":100.0}")
 ACCOUNT3=$(echo $ACC3_RESP | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
 
 echo "Account2: $ACCOUNT2"
