@@ -34,16 +34,26 @@ services:
     networks:
       - banking-network
 
-  opensearch-dashboards-init:
-    image: curlimages/curl:latest
-    container_name: opensearch-dashboards-init
+  # Container de inicialização completa:
+  # 1. Aguarda todos os serviços ficarem healthy
+  # 2. Configura index patterns no OpenSearch Dashboards
+  # 3. Executa simulação de clientes para gerar dados de teste
+  environment-init:
+    image: alpine/curl:latest
+    container_name: environment-init
     volumes:
-      - ./opensearch-dashboards-init.sh:/init.sh
-    command: ["/bin/sh", "/init.sh"]
+      - ./init-and-test.sh:/init-and-test.sh
+    command: ["/bin/sh", "/init-and-test.sh"]
     depends_on:
       opensearch:
         condition: service_healthy
       opensearch-dashboards:
+        condition: service_started
+      otel-collector:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      banking-api:
         condition: service_started
     networks:
       - banking-network
@@ -110,6 +120,53 @@ services:
         condition: service_healthy
     networks:
       - banking-network
+
+  # MCP Server para Banking API
+  # Expõe todos os endpoints da Banking API como tools MCP
+  # Permite que IAs chamem a API através do Model Context Protocol
+  mcp-banking-api:
+    build:
+      context: ./mcp-banking-api
+      dockerfile: Dockerfile
+    container_name: mcp-banking-api
+    environment:
+      - BANKING_API_URL=http://banking-api:80
+      - HTTP_TIMEOUT=30
+    depends_on:
+      banking-api:
+        condition: service_started
+    networks:
+      - banking-network
+    # O servidor MCP usa stdio por padrão (para Cursor/Claude Desktop)
+    # Para usar SSE, descomente a linha abaixo e ajuste o comando no Dockerfile
+    # ports:
+    #   - "9900:9900"
+    restart: unless-stopped
+
+  # MCP Server para OpenSearch
+  # Permite consultar logs e traces com filtros por clientId, correlationId e período
+  # Suporta parsing de linguagem natural para períodos (ex: "ontem", "há 2 horas")
+  mcp-opensearch:
+    build:
+      context: ./mcp-opensearch
+      dockerfile: Dockerfile
+    container_name: mcp-opensearch
+    environment:
+      - OPENSEARCH_URL=http://opensearch:9200
+      - OPENSEARCH_USERNAME=
+      - OPENSEARCH_PASSWORD=
+      - LOGS_INDEX=logs-banking-api
+      - TRACES_INDEX=traces-banking-api
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    networks:
+      - banking-network
+    # O servidor MCP usa stdio por padrão (para Cursor/Claude Desktop)
+    # Para usar SSE, descomente a linha abaixo e ajuste o comando no Dockerfile
+    # ports:
+    #   - "9901:9901"
+    restart: unless-stopped
 
 networks:
   banking-network:

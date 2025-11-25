@@ -11,4 +11,3 @@ OPENSEARCH_PASSWORD = os.getenv("OPENSEARCH_PASSWORD", "")
 LOGS_INDEX = os.getenv("LOGS_INDEX", "logs-banking-api")
 TRACES_INDEX = os.getenv("TRACES_INDEX", "traces-banking-api")
 
-
