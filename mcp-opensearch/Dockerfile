@@ -21,3 +21,4 @@ EXPOSE 9901
 # Para SSE, usar: python server.py --transport sse
 CMD ["python", "server.py"]
 
+

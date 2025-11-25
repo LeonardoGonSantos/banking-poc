@@ -243,3 +243,4 @@ def format_results_for_ai(results: Dict[str, Any], result_type: str = "logs") ->
     
     return "\n".join(formatted)
 
+
