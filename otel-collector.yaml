@@ -17,7 +17,7 @@ exporters:
       - "http://opensearch:9200"
     logs_index: "logs-banking-api"
     traces_index: "traces-banking-api"
-    timeout: 30s
+    timeout: 60s
     mapping:
       mode: "none"
     retry:
